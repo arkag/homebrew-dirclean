@@ -1,6 +1,10 @@
 class Dirclean < Formula
   desc "Clean up old files from directories"
   homepage "https://github.com/arkag/dirclean"
+
+  os = OS.mac? ? "darwin" : "linux"
+  arch = Hardware::CPU.arm? ? "arm64" : "amd64"
+  binary_name = "dirclean-#{os}-#{arch}.tar.gz"
   
   def self.release_info
     require "net/http"
@@ -33,9 +37,6 @@ class Dirclean < Formula
   end
 
   version, checksums = release_info
-  os = OS.mac? ? "darwin" : "linux"
-  arch = Hardware::CPU.arm? ? "arm64" : "amd64"
-  binary_name = "dirclean-#{os}-#{arch}.tar.gz"
   
   url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary_name}"
   sha256 checksums[binary_name]
