@@ -38,10 +38,16 @@ class Dirclean < Formula
     raise "Failed to fetch release info: #{e.message}"
   end
 
-  version, checksums = release_info
-  
-  url "https://github.com/arkag/dirclean/releases/download/#{version}/#{self.class.binary_name}"
-  sha256 checksums[binary_name]
+  # Get version and checksums
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
+
+  # Set version and URL after methods are defined
+  @version, @checksums = release_info
+  url "https://github.com/arkag/dirclean/releases/download/#{@version}/#{Dirclean.binary_name}"
+  sha256 @checksums[Dirclean.binary_name]
 
   def install
     bin.install "dirclean"
