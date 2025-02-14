@@ -34,7 +34,8 @@ class Dirclean < Formula
 
   version, checksums = release_info
   os = OS.mac? ? "darwin" : "linux"
-  binary_name = "dirclean-#{os}-#{Hardware::CPU.arch}64.tar.gz"
+  arch = Hardware::CPU.arm? ? "arm64" : "amd64"
+  binary_name = "dirclean-#{os}-#{arch}.tar.gz"
   
   url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary_name}"
   sha256 checksums[binary_name]
