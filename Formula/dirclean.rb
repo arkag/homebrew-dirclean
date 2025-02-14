@@ -52,8 +52,9 @@ class Dirclean < Formula
   def install
     bin.install "dirclean"
     
-    # Extract example config from the tarball
-    system "tar", "-xf", "#{self.class.binary_name}", "example.config.yaml"
+    # Extract example config from the downloaded archive
+    archive = cached_download
+    system "tar", "-xf", archive, "example.config.yaml"
     
     if File.exist?("example.config.yaml")
       # Use etc.install to handle config file installation
