@@ -4,16 +4,27 @@ class Dirclean < Formula
   
   # Fetch latest release version
   def self.latest_version
+    require "net/http"
+    require "json"
+    
     uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
-    response = Net::HTTP.get(uri)
-    data = JSON.parse(response)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    request = Net::HTTP::Get.new(uri)
+    response = http.request(request)
+    
+    if response.code != "200"
+      raise "GitHub API request failed with status #{response.code}: #{response.body}"
+    end
+    
+    data = JSON.parse(response.body)
     if data["tag_name"]
       data["tag_name"].sub(/^v/, "")
     else
-      raise "No releases found"
+      raise "No tag_name found in GitHub response: #{response.body}"
     end
-  rescue
-    raise "Unable to determine version. Please ensure there is at least one release on GitHub"
+  rescue => e
+    raise "Failed to fetch version: #{e.message}"
   end
 
   version latest_version
