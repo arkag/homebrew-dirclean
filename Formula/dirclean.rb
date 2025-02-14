@@ -18,7 +18,7 @@ class Dirclean < Formula
     
     data = JSON.parse(response.body)
     if data["tag_name"]
-      data["tag_name"].sub(/^v/, "")
+      data["tag_name"]
     else
       raise "No tag_name found in GitHub response: #{response.body}"
     end
@@ -67,11 +67,6 @@ class Dirclean < Formula
       raise "Failed to download checksums: HTTP #{response.code}"
     end
     
-    # Debug output
-    puts "Looking for checksum for: #{binary}"
-    puts "Checksums content:"
-    puts response.body
-    
     response.body.each_line do |line|
       checksum, file = line.strip.split(/\s+/, 2)
       if file == binary
@@ -110,13 +105,15 @@ class Dirclean < Formula
   end
 
   def install
-    # Find the tarball in the build directory
-    tarballs = buildpath.glob("*.tar.gz")
-    odie "No tarball found in #{buildpath}" if tarballs.empty?
-    odie "Multiple tarballs found in #{buildpath}" if tarballs.length > 1
+    # Find the tarball in the staged path
+    tarballs = staged_path.glob("*.tar.gz")
+    ohai "Searching for tarballs in: #{staged_path}"
+    ohai "Found tarballs: #{tarballs.join(', ')}"
+    odie "No tarball found in #{staged_path}" if tarballs.empty?
+    odie "Multiple tarballs found in #{staged_path}" if tarballs.length > 1
     
     tarball = tarballs.first
-    ohai "Found tarball: #{tarball}"
+    ohai "Using tarball: #{tarball}"
     
     # Extract with verbose output
     system "tar", "xvf", tarball
