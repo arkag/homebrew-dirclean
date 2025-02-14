@@ -110,8 +110,19 @@ class Dirclean < Formula
   end
 
   def install
-    # Extract the tarball contents
-    system "tar", "-xf", Dir["*.tar.gz"].first
+    # Find and extract the tarball with debug output
+    tarball = Dir["*.tar.gz"].first
+    ohai "Found tarball: #{tarball}"
+    
+    # Extract with verbose output
+    system "tar", "xvf", tarball
+    
+    unless $?.success?
+      odie "Failed to extract #{tarball}"
+    end
+    
+    # List contents of current directory
+    system "ls", "-la"
     
     bin.install "dirclean"
     
@@ -121,7 +132,11 @@ class Dirclean < Formula
     
     # Install example config from the extracted archive
     config_file = "config/example.config.yaml"  # Adjust path based on your archive structure
-    (config_dir/"example.config.yaml").write(File.read(config_file))
+    if File.exist?(config_file)
+      (config_dir/"example.config.yaml").write(File.read(config_file))
+    else
+      odie "Config file not found at #{config_file}. Contents of current directory: #{Dir.entries('.')}"
+    end
     
     # Create share directory and symlink
     share_dir = "#{HOMEBREW_PREFIX}/share/dirclean"
