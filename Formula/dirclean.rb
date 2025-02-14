@@ -38,13 +38,11 @@ class Dirclean < Formula
     raise "Failed to fetch release info: #{e.message}"
   end
 
-  # Get version and checksums
   livecheck do
     url :stable
     strategy :github_latest
   end
 
-  # Set version and URL after methods are defined
   @version, @checksums = release_info
   url "https://github.com/arkag/dirclean/releases/download/#{@version}/#{Dirclean.binary_name}"
   sha256 @checksums[Dirclean.binary_name]
@@ -57,14 +55,20 @@ class Dirclean < Formula
     system "tar", "-xf", archive, "example.config.yaml"
     
     if File.exist?("example.config.yaml")
-      # Create the config directory and install the example config
+      # Install the example config to both etc and share
       (etc/"dirclean").install "example.config.yaml"
+      (share/"dirclean").install_symlink etc/"dirclean/example.config.yaml"
       
-      # Create the share directory
-      (share/"dirclean").mkpath
-      
-      # Create the symlink using relative paths
-      ln_sf "#{etc}/dirclean/example.config.yaml", "#{share}/dirclean/example.config.yaml"
+      # For compatibility with both Intel and Apple Silicon Macs
+      if OS.mac?
+        if Hardware::CPU.arm?
+          # Ensure /opt/homebrew/share/dirclean exists and has the config
+          (HOMEBREW_PREFIX/"share/dirclean").install_symlink etc/"dirclean/example.config.yaml"
+        else
+          # For Intel Macs, ensure /usr/local/share/dirclean exists and has the config
+          (HOMEBREW_PREFIX/"share/dirclean").install_symlink etc/"dirclean/example.config.yaml"
+        end
+      end
     else
       odie "Config file not found in tarball. Contents: #{Dir.entries('.')}"
     end
