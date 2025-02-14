@@ -6,9 +6,14 @@ class Dirclean < Formula
   def self.latest_version
     uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
     response = Net::HTTP.get(uri)
-    JSON.parse(response)["tag_name"].sub(/^v/, "")
+    data = JSON.parse(response)
+    if data["tag_name"]
+      data["tag_name"].sub(/^v/, "")
+    else
+      raise "No releases found"
+    end
   rescue
-    "1.0.0" # Fallback version if API call fails
+    raise "Unable to determine version. Please ensure there is at least one release on GitHub"
   end
 
   version latest_version
