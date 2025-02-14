@@ -1,12 +1,11 @@
 class Dirclean < Formula
   desc "Clean up old files from directories"
   homepage "https://github.com/arkag/dirclean"
+  require "net/http"
+  require "json"
   
   # Fetch latest release version
   def self.latest_version
-    require "net/http"
-    require "json"
-    
     uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
