@@ -50,12 +50,20 @@ class Dirclean < Formula
   def self.fetch_checksum(version, binary)
     require "net/http"
     uri = URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt")
+    
+    # Create HTTP client that follows redirects
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
-    request = Net::HTTP::Get.new(uri)
-    response = http.request(request)
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
     
-    if response.code != "200"
+    # Make request that follows redirects
+    response = Net::HTTP.get_response(uri)
+    while response.is_a?(Net::HTTPRedirection)
+      uri = URI(response['location'])
+      response = Net::HTTP.get_response(uri)
+    end
+    
+    if !response.is_a?(Net::HTTPSuccess)
       raise "Failed to download checksums: HTTP #{response.code}"
     end
     
