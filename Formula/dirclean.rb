@@ -2,9 +2,11 @@ class Dirclean < Formula
   desc "Clean up old files from directories"
   homepage "https://github.com/arkag/dirclean"
 
-  os = OS.mac? ? "darwin" : "linux"
-  arch = Hardware::CPU.arm? ? "arm64" : "amd64"
-  binary_name = "dirclean-#{os}-#{arch}.tar.gz"
+  def self.binary_name
+    os = OS.mac? ? "darwin" : "linux"
+    arch = Hardware::CPU.arm? ? "arm64" : "amd64"
+    "dirclean-#{os}-#{arch}.tar.gz"
+  end
   
   def self.release_info
     require "net/http"
@@ -38,14 +40,14 @@ class Dirclean < Formula
 
   version, checksums = release_info
   
-  url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary_name}"
+  url "https://github.com/arkag/dirclean/releases/download/#{version}/#{self.class.binary_name}"
   sha256 checksums[binary_name]
 
   def install
     bin.install "dirclean"
     
     # Extract example config from the tarball
-    system "tar", "-xf", "#{binary_name}", "example.config.yaml"
+    system "tar", "-xf", "#{self.class.binary_name}", "example.config.yaml"
     
     if File.exist?("example.config.yaml")
       # Use etc.install to handle config file installation
