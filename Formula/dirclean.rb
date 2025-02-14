@@ -5,6 +5,7 @@ class Dirclean < Formula
   def self.release_info
     require "net/http"
     require "json"
+    require "open-uri"
     
     version_uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
     http = Net::HTTP.new(version_uri.host, version_uri.port)
@@ -18,17 +19,12 @@ class Dirclean < Formula
     data = JSON.parse(version_response.body)
     version = data["tag_name"] or raise "No tag_name found in GitHub response"
     
-    checksums_uri = URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt")
-    checksums_response = Net::HTTP.get_response(checksums_uri)
-    
-    if !checksums_response.is_a?(Net::HTTPSuccess)
-      raise "Failed to download checksums: HTTP #{checksums_response.code}"
-    end
-    
     checksums = {}
-    checksums_response.body.each_line do |line|
-      checksum, file = line.strip.split(/\s+/, 2)
-      checksums[file] = checksum if file && checksum
+    URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt").open do |f|
+      f.each_line do |line|
+        checksum, file = line.strip.split(/\s+/, 2)
+        checksums[file] = checksum if file && checksum
+      end
     end
     
     [version, checksums]
