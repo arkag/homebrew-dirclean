@@ -111,7 +111,7 @@ class Dirclean < Formula
 
   def install
     # Extract the tarball contents
-    system "tar", "xf", Dir["*.tar.gz"].first
+    system "tar", "-xf", Dir["*.tar.gz"].first
     
     bin.install "dirclean"
     
