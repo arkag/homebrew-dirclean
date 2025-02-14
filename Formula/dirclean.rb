@@ -105,12 +105,12 @@ class Dirclean < Formula
   end
 
   def install
-    # Find the tarball in the staged path
-    tarballs = staged_path.glob("*.tar.gz")
-    ohai "Searching for tarballs in: #{staged_path}"
+    # Find the tarball in the current directory
+    tarballs = Dir["*.tar.gz"]
+    ohai "Searching for tarballs in: #{Dir.pwd}"
     ohai "Found tarballs: #{tarballs.join(', ')}"
-    odie "No tarball found in #{staged_path}" if tarballs.empty?
-    odie "Multiple tarballs found in #{staged_path}" if tarballs.length > 1
+    odie "No tarball found in #{Dir.pwd}" if tarballs.empty?
+    odie "Multiple tarballs found in #{Dir.pwd}" if tarballs.length > 1
     
     tarball = tarballs.first
     ohai "Using tarball: #{tarball}"
