@@ -110,8 +110,12 @@ class Dirclean < Formula
   end
 
   def install
-    # Find and extract the tarball with debug output
-    tarball = Dir["*.tar.gz"].first
+    # Find the tarball in the build directory
+    tarballs = buildpath.glob("*.tar.gz")
+    odie "No tarball found in #{buildpath}" if tarballs.empty?
+    odie "Multiple tarballs found in #{buildpath}" if tarballs.length > 1
+    
+    tarball = tarballs.first
     ohai "Found tarball: #{tarball}"
     
     # Extract with verbose output
