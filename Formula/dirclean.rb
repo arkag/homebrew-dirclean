@@ -2,147 +2,62 @@ class Dirclean < Formula
   desc "Clean up old files from directories"
   homepage "https://github.com/arkag/dirclean"
   
-  # Fetch latest release version
-  def self.latest_version
+  def self.release_info
     require "net/http"
     require "json"
-    uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
-    http = Net::HTTP.new(uri.host, uri.port)
+    
+    version_uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
+    http = Net::HTTP.new(version_uri.host, version_uri.port)
     http.use_ssl = true
-    request = Net::HTTP::Get.new(uri)
-    response = http.request(request)
+    version_response = http.request(Net::HTTP::Get.new(version_uri))
     
-    if response.code != "200"
-      raise "GitHub API request failed with status #{response.code}: #{response.body}"
+    if version_response.code != "200"
+      raise "GitHub API request failed with status #{version_response.code}"
     end
     
-    data = JSON.parse(response.body)
-    if data["tag_name"]
-      data["tag_name"]
-    else
-      raise "No tag_name found in GitHub response: #{response.body}"
-    end
-  rescue => e
-    raise "Failed to fetch version: #{e.message}"
-  end
-
-  version latest_version
-
-  # Define all possible binary combinations and config paths
-  def self.config_path
-    if OS.mac?
-      "/usr/local/share/dirclean"
-    else
-      "/usr/share/dirclean"
-    end
-  end
-
-  def self.binary_info
-    {
-      darwin_arm64: "dirclean-darwin-arm64.tar.gz",
-      darwin_amd64: "dirclean-darwin-amd64.tar.gz",
-      linux_arm64: "dirclean-linux-arm64.tar.gz",
-      linux_amd64: "dirclean-linux-amd64.tar.gz"
-    }
-  end
-
-  # Fetch SHA256 for a specific binary
-  def self.fetch_checksum(version, binary)
-    require "net/http"
-    uri = URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt")
+    data = JSON.parse(version_response.body)
+    version = data["tag_name"] or raise "No tag_name found in GitHub response"
     
-    # Create HTTP client that follows redirects
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    checksums_uri = URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt")
+    checksums_response = Net::HTTP.get_response(checksums_uri)
     
-    # Make request that follows redirects
-    response = Net::HTTP.get_response(uri)
-    while response.is_a?(Net::HTTPRedirection)
-      uri = URI(response['location'])
-      response = Net::HTTP.get_response(uri)
+    if !checksums_response.is_a?(Net::HTTPSuccess)
+      raise "Failed to download checksums: HTTP #{checksums_response.code}"
     end
     
-    if !response.is_a?(Net::HTTPSuccess)
-      raise "Failed to download checksums: HTTP #{response.code}"
-    end
-    
-    response.body.each_line do |line|
+    checksums = {}
+    checksums_response.body.each_line do |line|
       checksum, file = line.strip.split(/\s+/, 2)
-      if file == binary
-        puts "Found matching checksum: #{checksum} for #{file}"
-        return checksum
-      end
+      checksums[file] = checksum if file && checksum
     end
     
-    raise "Checksum not found for #{binary} in:\n#{response.body}"
+    [version, checksums]
   rescue => e
-    raise "Failed to fetch checksum: #{e.message}"
+    raise "Failed to fetch release info: #{e.message}"
   end
 
-  on_macos do
-    if Hardware::CPU.arm?
-      binary = binary_info[:darwin_arm64]
-      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}", using :homebrew_curl
-      sha256 fetch_checksum(version, binary)
-    else
-      binary = binary_info[:darwin_amd64]
-      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}", using :homebrew_curl
-      sha256 fetch_checksum(version, binary)
-    end
-  end
-
-  on_linux do
-    if Hardware::CPU.arm?
-      binary = binary_info[:linux_arm64]
-      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}", using :homebrew_curl
-      sha256 fetch_checksum(version, binary)
-    else
-      binary = binary_info[:linux_amd64]
-      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}", using :homebrew_curlx
-      sha256 fetch_checksum(version, binary)
-    end
-  end
+  version, checksums = release_info
+  binary_name = "dirclean-#{OS.kernel_name.downcase}-#{Hardware::CPU.arch}64.tar.gz"
+  
+  url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary_name}"
+  sha256 checksums[binary_name]
 
   def install
-    # Find the tarball in the current directory
-    tarballs = Dir["*.tar.gz"]
-    ohai "Searching for tarballs in: #{Dir.pwd}"
-    ohai "Found tarballs: #{tarballs.join(', ')}"
-    odie "No tarball found in #{Dir.pwd}" if tarballs.empty?
-    odie "Multiple tarballs found in #{Dir.pwd}" if tarballs.length > 1
-    
-    tarball = tarballs.first
-    ohai "Using tarball: #{tarball}"
-    
-    # Extract with verbose output
-    system "tar", "xvf", tarball
-    
-    unless $?.success?
-      odie "Failed to extract #{tarball}"
-    end
-    
-    # List contents of current directory
-    system "ls", "-la"
-    
     bin.install "dirclean"
     
-    # Create config directory
     config_dir = etc/"dirclean"
     config_dir.mkpath
     
-    # Install example config from the extracted archive
-    config_file = "config/example.config.yaml"  # Adjust path based on your archive structure
+    config_file = "config/example.config.yaml"
     if File.exist?(config_file)
       (config_dir/"example.config.yaml").write(File.read(config_file))
     else
       odie "Config file not found at #{config_file}. Contents of current directory: #{Dir.entries('.')}"
     end
     
-    # Create share directory and symlink
     share_dir = "#{HOMEBREW_PREFIX}/share/dirclean"
-    system "mkdir", "-p", share_dir unless Dir.exist?(share_dir)
-    system "ln", "-sf", "#{config_dir}/example.config.yaml", "#{share_dir}/example.config.yaml"
+    mkdir_p share_dir
+    ln_sf "#{config_dir}/example.config.yaml", "#{share_dir}/example.config.yaml"
   end
 
   test do
