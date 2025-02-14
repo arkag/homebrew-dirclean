@@ -16,14 +16,22 @@ class Dirclean < Formula
     version_uri = URI("https://api.github.com/repos/arkag/dirclean/releases/latest")
     http = Net::HTTP.new(version_uri.host, version_uri.port)
     http.use_ssl = true
-    version_response = http.request(Net::HTTP::Get.new(version_uri))
+    
+    request = Net::HTTP::Get.new(version_uri)
+    # Add User-Agent to avoid GitHub API rate limiting
+    request["User-Agent"] = "Homebrew-dirclean-formula"
+    version_response = http.request(request)
     
     if version_response.code != "200"
       raise "GitHub API request failed with status #{version_response.code}"
     end
     
     data = JSON.parse(version_response.body)
-    version = data["tag_name"] or raise "No tag_name found in GitHub response"
+    version = data["tag_name"].gsub(/^v/, "") # Remove 'v' prefix if present
+    
+    if version.empty?
+      raise "No tag_name found in GitHub response"
+    end
     
     checksums = {}
     URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt").open do |f|
@@ -39,11 +47,13 @@ class Dirclean < Formula
   end
 
   livecheck do
-    url :stable
-    strategy :github_latest
+    url "https://api.github.com/repos/arkag/dirclean/releases/latest"
+    regex(/tag_name": "v?(\d+(?:\.\d+)+)"/i)
+    strategy :json
   end
 
   @version, @checksums = release_info
+  version @version
   url "https://github.com/arkag/dirclean/releases/download/#{@version}/#{Dirclean.binary_name}"
   sha256 @checksums[Dirclean.binary_name]
 
@@ -55,20 +65,12 @@ class Dirclean < Formula
     system "tar", "-xf", archive, "example.config.yaml"
     
     if File.exist?("example.config.yaml")
-      # Install the example config to both etc and share
+      # Install config file to etc
       (etc/"dirclean").install "example.config.yaml"
-      (share/"dirclean").install_symlink etc/"dirclean/example.config.yaml"
       
-      # For compatibility with both Intel and Apple Silicon Macs
-      if OS.mac?
-        if Hardware::CPU.arm?
-          # Ensure /opt/homebrew/share/dirclean exists and has the config
-          (HOMEBREW_PREFIX/"share/dirclean").install_symlink etc/"dirclean/example.config.yaml"
-        else
-          # For Intel Macs, ensure /usr/local/share/dirclean exists and has the config
-          (HOMEBREW_PREFIX/"share/dirclean").install_symlink etc/"dirclean/example.config.yaml"
-        end
-      end
+      # Create symlink in share directory
+      (share/"dirclean").mkpath
+      (share/"dirclean").install_symlink etc/"dirclean/example.config.yaml"
     else
       odie "Config file not found in tarball. Contents: #{Dir.entries('.')}"
     end
