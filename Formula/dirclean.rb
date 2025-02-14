@@ -110,20 +110,23 @@ class Dirclean < Formula
   end
 
   def install
+    # Extract the tarball contents
+    system "tar", "xf", Dir["*.tar.gz"].first
+    
     bin.install "dirclean"
     
     # Create config directory
     config_dir = etc/"dirclean"
     config_dir.mkpath
     
-    # Install example config from the archive
-    config_file = "example.config.yaml"
-    (config_dir/config_file).write(File.read(config_file))
+    # Install example config from the extracted archive
+    config_file = "config/example.config.yaml"  # Adjust path based on your archive structure
+    (config_dir/"example.config.yaml").write(File.read(config_file))
     
     # Create share directory and symlink
     share_dir = "#{HOMEBREW_PREFIX}/share/dirclean"
     system "mkdir", "-p", share_dir unless Dir.exist?(share_dir)
-    system "ln", "-sf", "#{config_dir}/#{config_file}", "#{share_dir}/#{config_file}"
+    system "ln", "-sf", "#{config_dir}/example.config.yaml", "#{share_dir}/example.config.yaml"
   end
 
   test do
