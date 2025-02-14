@@ -49,7 +49,7 @@ class Dirclean < Formula
 
   # Fetch SHA256 for a specific binary
   def self.fetch_checksum(version, binary)
-    uri = URI("https://github.com/arkag/dirclean/releases/download/v#{version}/checksums.txt")
+    uri = URI("https://github.com/arkag/dirclean/releases/download/#{version}/checksums.txt")
     response = Net::HTTP.get(uri)
     response.lines.each do |line|
       checksum, file = line.split
