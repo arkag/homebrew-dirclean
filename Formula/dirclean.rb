@@ -43,19 +43,18 @@ class Dirclean < Formula
   def install
     bin.install "dirclean"
     
-    config_dir = etc/"dirclean"
-    config_dir.mkpath
+    # Extract example config from the tarball
+    system "tar", "-xf", "#{binary_name}", "example.config.yaml"
     
-    config_file = "example.config.yaml"
-    if File.exist?(config_file)
-      (config_dir/"example.config.yaml").write(File.read(config_file))
+    if File.exist?("example.config.yaml")
+      # Use etc.install to handle config file installation
+      etc.install "example.config.yaml" => "dirclean/example.config.yaml"
     else
-      odie "Config file not found at #{config_file}. Contents of current directory: #{Dir.entries('.')}"
+      odie "Config file not found in tarball. Contents: #{Dir.entries('.')}"
     end
     
-    share_dir = "#{HOMEBREW_PREFIX}/share/dirclean"
-    mkdir_p share_dir
-    ln_sf "#{config_dir}/example.config.yaml", "#{share_dir}/example.config.yaml"
+    # Use prefix.install_symlink for creating the symlink
+    prefix.install_symlink etc/"dirclean/example.config.yaml" => "share/dirclean/example.config.yaml"
   end
 
   test do
