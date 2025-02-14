@@ -63,11 +63,11 @@ class Dirclean < Formula
   on_macos do
     if Hardware::CPU.arm?
       binary = binary_info[:darwin_arm64]
-      url "https://github.com/arkag/dirclean/releases/download/v#{version}/#{binary}"
+      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}"
       sha256 fetch_checksum(version, binary)
     else
       binary = binary_info[:darwin_amd64]
-      url "https://github.com/arkag/dirclean/releases/download/v#{version}/#{binary}"
+      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}"
       sha256 fetch_checksum(version, binary)
     end
   end
@@ -75,11 +75,11 @@ class Dirclean < Formula
   on_linux do
     if Hardware::CPU.arm?
       binary = binary_info[:linux_arm64]
-      url "https://github.com/arkag/dirclean/releases/download/v#{version}/#{binary}"
+      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}"
       sha256 fetch_checksum(version, binary)
     else
       binary = binary_info[:linux_amd64]
-      url "https://github.com/arkag/dirclean/releases/download/v#{version}/#{binary}"
+      url "https://github.com/arkag/dirclean/releases/download/#{version}/#{binary}"
       sha256 fetch_checksum(version, binary)
     end
   end
