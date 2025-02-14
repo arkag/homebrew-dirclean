@@ -57,14 +57,17 @@ class Dirclean < Formula
     system "tar", "-xf", archive, "example.config.yaml"
     
     if File.exist?("example.config.yaml")
-      # Use etc.install to handle config file installation
-      etc.install "example.config.yaml" => "dirclean/example.config.yaml"
+      # Create the config directory and install the example config
+      (etc/"dirclean").install "example.config.yaml"
+      
+      # Create the share directory
+      (share/"dirclean").mkpath
+      
+      # Create the symlink using relative paths
+      ln_sf "#{etc}/dirclean/example.config.yaml", "#{share}/dirclean/example.config.yaml"
     else
       odie "Config file not found in tarball. Contents: #{Dir.entries('.')}"
     end
-    
-    # Use prefix.install_symlink for creating the symlink
-    prefix.install_symlink etc/"dirclean/example.config.yaml" => "share/dirclean/example.config.yaml"
   end
 
   test do
