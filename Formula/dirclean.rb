@@ -46,7 +46,7 @@ class Dirclean < Formula
     config_dir = etc/"dirclean"
     config_dir.mkpath
     
-    config_file = "config/example.config.yaml"
+    config_file = "example.config.yaml"
     if File.exist?(config_file)
       (config_dir/"example.config.yaml").write(File.read(config_file))
     else
